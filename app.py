@@ -14,12 +14,23 @@ CORS(app, resources={
     }
 })
 
+model = None
+
 # Model is stored in hugging face repo because of size limit in deployment
-MODEL_PATH = hf_hub_download(
-    repo_id="ayaMee/meat-freshness-classifier-mobilenetv2",
-    filename="MobileNetV2_FINETUNED_13.keras"
-)
+
 CLASS_NAMES = ["Fresh", "Spoiled"]
+
+def start_model():
+    global model
+    
+    if model is None:
+        MODEL_PATH = hf_hub_download(
+            repo_id="ayaMee/meat-freshness-classifier-mobilenetv2",
+            filename="MobileNetV2_FINETUNED_13.keras"
+        )
+        model = load_model(MODEL_PATH)
+    
+    return model
 
 def preprocessImage(img, target_size=(224,224)):
     # either save it temp or convert to io.Bytesio
@@ -42,7 +53,7 @@ def classifyImage():
     image = request.files['image']
     preprocessed = preprocessImage(image)
     
-    model = load_model(MODEL_PATH)
+    model = start_model()
     prediction = model.predict(preprocessed)
     label =  CLASS_NAMES[np.argmax(prediction)]
        
